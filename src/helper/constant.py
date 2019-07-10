@@ -1,0 +1,10 @@
+DATASET_PATH = "dataset"
+DATASET_FORMAT = "*.mid"
+SEQUENCE_LENGTH = 50
+DESIRED_INSTRUMENT = "Electric Guitar"
+MODEL_LOSS = "categorical_crossentropy"
+MODEL_PATH = "output/blues-generator.h5"
+PLOT_PATH = "output/plot.png"
+NEW_MUSIC = "output/new_music.mid"
+LEARNING_RATE = 1e-3
+EPOCHS = 100
