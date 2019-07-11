@@ -59,9 +59,6 @@ class DataHandler:
                 print(e)
                 continue
 
-            if i >= 400:
-                break
-
         print("[INFO] Done loading MIDI files...")
         pitches = sorted(set(item for item in notes))
 

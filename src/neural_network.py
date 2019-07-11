@@ -50,7 +50,7 @@ class NeuralNetwork:
             input_notes,
             output_notes,
             epochs=constant.EPOCHS,
-            callbacks=[checkpoint, stop_training]
+            callbacks=[checkpoint]
         )
 
         self.network_model.plot_loss_and_accuracy(args, history)
