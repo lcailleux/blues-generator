@@ -59,7 +59,7 @@ class DataHandler:
                 print(e)
                 continue
 
-            if i >= 500:
+            if i >= 400:
                 break
 
         print("[INFO] Done loading MIDI files...")

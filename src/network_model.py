@@ -12,11 +12,10 @@ class NetworkModel:
 
         model = tf.keras.models.Sequential([
             tf.keras.layers.Bidirectional(
-                tf.keras.layers.LSTM(128, input_shape=(args["sequence_length"], vocab_length))
+                tf.keras.layers.LSTM(256, return_sequences=True, input_shape=(args["sequence_length"], vocab_length))
             ),
             tf.keras.layers.Dropout(0.2),
             tf.keras.layers.LSTM(128),
-            tf.keras.layers.Dropout(0.2),
             tf.keras.layers.Dense(vocab_length, activation='softmax')
         ])
 
