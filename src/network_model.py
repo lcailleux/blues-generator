@@ -11,10 +11,7 @@ class NetworkModel:
         """
 
         model = tf.keras.models.Sequential([
-            tf.keras.layers.Bidirectional(
-                tf.keras.layers.LSTM(256, return_sequences=True, input_shape=(args["sequence_length"], vocab_length))
-            ),
-            tf.keras.layers.Dropout(0.2),
+            tf.keras.layers.LSTM(256, return_sequences=True, input_shape=(constant.SEQUENCE_LENGTH, vocab_length)),
             tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(256)),
             tf.keras.layers.Dense(vocab_length, activation='softmax')
         ])
@@ -33,10 +30,12 @@ class NetworkModel:
         :param history:
         :return:
         """
+        nb_epochs = len(history.history['loss'])
+
         plt.style.use("ggplot")
         plt.figure()
-        plt.plot(np.arange(0, constant.EPOCHS), history.history["loss"], label="train_loss")
-        plt.plot(np.arange(0, constant.EPOCHS), history.history["acc"], label="train_acc")
+        plt.plot(np.arange(0, nb_epochs), history.history["loss"], label="train_loss")
+        plt.plot(np.arange(0, nb_epochs), history.history["acc"], label="train_acc")
         plt.title("Loss and Accuracy")
         plt.xlabel("Epoch #")
         plt.ylabel("Loss/Accuracy")

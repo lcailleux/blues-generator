@@ -1,4 +1,5 @@
 import glob
+import pickle
 import numpy as np
 from helper import constant
 from music21 import converter, instrument, note, chord, midi, stream
@@ -8,17 +9,20 @@ class DataHandler:
     def load_dataset(self, args):
         print("[INFO] loading MIDI files...")
 
-        notes, pitches = self.load_notes_and_pitches(args["instrument"])
+        notes, pitches, offsets = self.load_notes_and_pitches(args["instrument"])
+        input_notes, output_notes, vocab_length, _ = self.get_neural_network_notes(notes, pitches)
+
+        return input_notes, output_notes, vocab_length
+
+    def get_neural_network_notes(self, notes, pitches):
+        note_dict = dict()
         vocab_length = len(pitches)
         notes_number = len(notes)
-        sequence_length = args["sequence_length"]
 
-        print(vocab_length)
-
-        note_dict = dict()
         for i, current_note in enumerate(pitches):
             note_dict[current_note] = i
 
+        sequence_length = constant.SEQUENCE_LENGTH
         num_training = notes_number - sequence_length
         input_notes = np.zeros((num_training, sequence_length, vocab_length))
         output_notes = np.zeros((num_training, vocab_length))
@@ -32,10 +36,11 @@ class DataHandler:
 
             output_notes[i][note_dict[output_note]] = 1
 
-        return input_notes, output_notes, note_dict, vocab_length
+        return input_notes, output_notes, vocab_length, note_dict
 
     def load_notes_and_pitches(self, desired_instrument):
         notes = []
+        offsets = []
         print("[INFO] If a file does not contain one of the required instruments, it will be skipped.")
 
         for i, file in enumerate(glob.glob(constant.DATASET_PATH + '/' + constant.DATASET_FORMAT)):
@@ -47,7 +52,9 @@ class DataHandler:
                     for partition in partitions:
                         if partition.id == desired_instrument:
                             selected_partition = partition
+
                             for element in selected_partition.flat.notes:
+                                offsets.append(element.offset)
                                 if isinstance(element, note.Note):
                                     notes.append(str(element.pitch))
                                 elif isinstance(element, chord.Chord):
@@ -59,10 +66,17 @@ class DataHandler:
                 print(e)
                 continue
 
+            #if len(notes) >= 200:#constant.MAX_NOTES:
+            if i > 10:
+                break
+
+        with open(constant.NOTE_PATH, 'wb') as filepath:
+            pickle.dump(notes, filepath)
+
         print("[INFO] Done loading MIDI files...")
         pitches = sorted(set(item for item in notes))
 
-        return notes, pitches
+        return notes, pitches, offsets
 
     def save_midi(self, args, output, backward_dict):
         final_notes = []
@@ -71,32 +85,32 @@ class DataHandler:
             final_notes.append(backward_dict[index])
 
         offset = 0
-        part_1 = stream.Part()
-        instrument_1 = instrument.fromString(args["instrument"])
+        partition = stream.Part()
+        output_instrument = instrument.fromString(args["instrument"])
 
         for pattern in final_notes:
             if ('.' in pattern) or pattern.isdigit():
                 notes_in_chord = pattern.split('.')
-
                 notes = []
                 for current_note in notes_in_chord:
                     new_note = note.Note(int(current_note))
                     new_note.offset = offset
                     notes.append(new_note)
-
                 new_chord = chord.Chord(notes)
                 new_chord.offset = offset
-                part_1.insert(new_chord)
+                partition.insert(new_chord)
             else:
                 new_note = note.Note(pattern)
                 new_note.offset = offset
-                part_1.insert(new_note)
+                partition.insert(new_note)
 
             offset += 0.5
 
-        part_1.insert(0, instrument_1)
+        print(final_notes)
+
+        partition.insert(0, output_instrument)
 
         score = stream.Score()
-        score.insert(0, part_1)
+        score.insert(0, output_instrument)
         score.show('text')
         score.write('midi', fp=constant.NEW_MUSIC)
