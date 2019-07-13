@@ -19,8 +19,8 @@ class NeuralNetwork:
 
     def train(self, args):
         # Loading dataset
-        input_notes, output_notes, vocab_length = self.data_handler.load_dataset(args)
-        model = self.network_model.create(args, vocab_length)
+        network_input, network_output, vocab_length = self.data_handler.load_dataset(args)
+        model = self.network_model.create(network_input, vocab_length)
 
         # callbacks
         stop_training = StopTrainingCallback()
@@ -35,8 +35,8 @@ class NeuralNetwork:
         )
 
         history = model.fit(
-            input_notes,
-            output_notes,
+            network_input,
+            network_output,
             epochs=constant.EPOCHS,
             callbacks=[checkpoint, stop_training]
         )
@@ -50,19 +50,11 @@ class NeuralNetwork:
         with open(args["notes"], 'rb') as notes_path:
             notes = pickle.load(notes_path)
             pitches = sorted(set(item for item in notes))
+            vocab_length = len(set(notes))
 
-            input_notes, output_notes, vocab_length, note_dict = self.data_handler.get_neural_network_notes(
-                notes,
-                pitches
-            )
+            network_input, network_output = self.data_handler.prepare_sequences(notes, vocab_length)
+            prediction_output = self.network_model.generate_notes(model, network_input, pitches, vocab_length)
 
-            output, backward_dict = self.network_model.generate_music(
-                model,
-                input_notes,
-                note_dict,
-                vocab_length
-            )
-
-            self.data_handler.save_midi(args, output, backward_dict)
+            self.data_handler.save_midi(args, prediction_output)
 
 

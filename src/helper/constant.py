@@ -1,6 +1,7 @@
 DATASET_PATH = "dataset"
 DATASET_FORMAT = "*.mid"
 SEQUENCE_LENGTH = 50
+OUTPUT_LENGTH = 100
 MAX_NOTES = 72000
 DESIRED_INSTRUMENT = "Electric Guitar"
 MODEL_LOSS = "categorical_crossentropy"

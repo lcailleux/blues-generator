@@ -5,13 +5,20 @@ from helper import constant
 
 
 class NetworkModel:
-    def create(self, args, vocab_length):
+    def create(self, network_input, vocab_length):
         """
         :return model: keras.models.Model
         """
 
         model = tf.keras.models.Sequential([
-            tf.keras.layers.LSTM(256, return_sequences=True, input_shape=(constant.SEQUENCE_LENGTH, vocab_length)),
+            tf.keras.layers.LSTM(
+                256,
+                return_sequences=True,
+                input_shape=(
+                    network_input.shape[1],
+                    network_input.shape[2]
+                )
+            ),
             tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(256)),
             tf.keras.layers.Dense(vocab_length, activation='softmax')
         ])
@@ -43,26 +50,28 @@ class NetworkModel:
         plt.savefig(args["plot"])
         plt.show()
 
-    def generate_music(self, model, input_notes, note_dict, vocab_length):
-        backward_dict = dict()
-        for note in note_dict.keys():
-            index = note_dict[note]
-            backward_dict[index] = note
+    def generate_notes(self, model, network_input, pitches, vocab_length):
+        start = np.random.randint(0, len(network_input) - 1)
 
-        n = np.random.randint(0, len(input_notes) - 1)
-        sequence = input_notes[n]
-        start_sequence = sequence.reshape(1, constant.SEQUENCE_LENGTH, vocab_length)
-        output = []
+        int_to_note = dict((number, note) for number, note in enumerate(pitches))
 
-        for i in range(0, 100):
-            new_note = model.predict(start_sequence, verbose=0)
-            index = np.argmax(new_note)
-            encoded_note = np.zeros(vocab_length)
-            encoded_note[index] = 1
-            output.append(encoded_note)
-            sequence = start_sequence[0][1:]
-            start_sequence = np.concatenate((sequence, encoded_note.reshape(1, vocab_length)))
-            start_sequence = start_sequence.reshape(1, constant.SEQUENCE_LENGTH, vocab_length)
+        pattern = network_input[start]
 
-        return output, backward_dict
+        prediction_output = []
+
+        # generate 500 notes
+        for note_index in range(constant.OUTPUT_LENGTH):
+            prediction_input = np.reshape(pattern, (1, len(pattern), 1))
+            prediction_input = prediction_input / float(vocab_length)
+
+            prediction = model.predict(prediction_input, verbose=0)
+
+            index = np.argmax(prediction)
+            result = int_to_note[index]
+            prediction_output.append(result)
+
+            pattern = np.append(pattern, index)
+            pattern = pattern[1:len(pattern)]
+
+        return prediction_output
 
