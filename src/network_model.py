@@ -13,19 +13,21 @@ class NetworkModel:
         model = tf.keras.models.Sequential([
             tf.keras.layers.LSTM(
                 256,
-                return_sequences=True,
-                input_shape=(
-                    network_input.shape[1],
-                    network_input.shape[2]
-                )
+                input_shape=(network_input.shape[1], network_input.shape[2]),
+                return_sequences=True
             ),
+            tf.keras.layers.Dropout(0.3),
+            tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(512, return_sequences=True)),
+            tf.keras.layers.Dropout(0.3),
             tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(256)),
+            tf.keras.layers.Dense(256),
+            tf.keras.layers.Dropout(0.3),
             tf.keras.layers.Dense(vocab_length, activation='softmax')
         ])
 
         model.compile(
             loss=constant.MODEL_LOSS,
-            optimizer=tf.keras.optimizers.Adam(lr=constant.LEARNING_RATE),
+            optimizer='rmsprop',
             metrics=['acc']
         )
 
@@ -59,7 +61,6 @@ class NetworkModel:
 
         prediction_output = []
 
-        # generate 500 notes
         for note_index in range(constant.OUTPUT_LENGTH):
             prediction_input = np.reshape(pattern, (1, len(pattern), 1))
             prediction_input = prediction_input / float(vocab_length)

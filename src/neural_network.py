@@ -38,6 +38,7 @@ class NeuralNetwork:
             network_input,
             network_output,
             epochs=constant.EPOCHS,
+            batch_size=constant.BATCH_SIZE,
             callbacks=[checkpoint, stop_training]
         )
 

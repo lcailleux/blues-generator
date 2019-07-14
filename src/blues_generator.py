@@ -12,10 +12,8 @@ if __name__ == "__main__":
     ap.add_argument(
         "-i",
         "--instrument",
-        type=str,
-        choices=['Electric Guitar', 'Piano'],
-        default=constant.DESIRED_INSTRUMENT,
-        help="instrument for the new song"
+        default=constant.INSTRUMENT_PATH,
+        help="instrument on which the training was performed"
     )
     args = vars(ap.parse_args())
 
