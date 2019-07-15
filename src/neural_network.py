@@ -8,7 +8,7 @@ from network_model import NetworkModel
 class StopTrainingCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         if logs and logs.get('acc') and logs.get('acc') > 0.99:
-            print("\n[INFO] Reached 98% accuracy, stopping training.")
+            print("\n[INFO] Reached 99% accuracy, stopping training.")
             self.model.stop_training = True
 
 

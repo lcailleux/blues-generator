@@ -27,7 +27,7 @@ class NetworkModel:
 
         model.compile(
             loss=constant.MODEL_LOSS,
-            optimizer='rmsprop',
+            optimizer='adam',
             metrics=['acc']
         )
 
