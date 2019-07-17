@@ -42,7 +42,6 @@ Please select one of the instrument for music generation:
 	Acoustic Bass
 	Piano
 	Saxophone
-:
 ```
 
 ### Model loss/accuracy
