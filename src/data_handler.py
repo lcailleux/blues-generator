@@ -1,8 +1,8 @@
 import pickle
 import numpy as np
-
 from keras.utils import np_utils
 from helper import constant
+from helper import utils
 from music21 import converter, instrument, note, chord, midi, stream
 
 
@@ -12,12 +12,15 @@ class DataHandler:
 
         notes, offsets = self.load_partition(args)
         vocab_length = len(set(notes))
-        network_input, network_output = self.prepare_sequences(notes, vocab_length)
+        network_input, network_output = self.prepare_sequences(notes, args['sequence_length'], vocab_length)
 
         return network_input, network_output, vocab_length
 
-    def prepare_sequences(self, notes, vocab_length):
-        sequence_length = constant.SEQUENCE_LENGTH
+    def prepare_sequences(self, notes, sequence_length, vocab_length):
+        if not sequence_length or sequence_length > constant.SEQUENCE_LENGTH:
+            sequence_length = constant.SEQUENCE_LENGTH
+
+        print(sequence_length)
         pitches = sorted(set(item for item in notes))
         note_to_int = dict((current_note, number) for number, current_note in enumerate(pitches))
 
@@ -47,23 +50,46 @@ class DataHandler:
                 midi_song = converter.parse(file.read())
                 instrument_name, partition = self.choose_instrument_partition(midi_song)
 
+                try:
+                    metronome_mark_boundaries = partition.metronomeMarkBoundaries()[0]
+                    metronome_mark = utils.get_latest_tuple_element(metronome_mark_boundaries)
+                except IndexError:
+                    metronome_mark = ''
+
+                partition_info = {
+                    "instrument_name": instrument_name,
+                    'key': self.get_partition_element_by_class(partition, 'KeySignature'),
+                    'time_signature': self.get_partition_element_by_class(partition, 'TimeSignature'),
+                    'metronome_mark': metronome_mark,
+                    'sequence_length': args['sequence_length']
+                }
+
                 for element in partition.flat.notes:
-                    offsets.append(element.offset)
                     if isinstance(element, note.Note):
+                        offsets.append(element.offset)
                         notes.append(str(element.pitch))
                     elif isinstance(element, chord.Chord):
+                        offsets.append(element.offset)
                         notes.append('.'.join(str(n) for n in element.normalOrder))
 
-                self.save_instrument_and_notes(instrument_name, notes)
+                if not notes:
+                    raise ValueError("There is not enough data in this partition. Please pick another one.")
+
+                self.save_partition_info_and_notes(partition_info, notes)
                 print("[INFO] song {} partition loaded".format(file.name))
                 print("[INFO] Done loading MIDI file...")
-
         except (IndexError, ValueError, midi.MidiException) as e:
             print('[ERROR] An error happened during song loading: {}. Quitting...'.format(file.name))
             print(e)
             exit()
 
         return notes, offsets
+
+    def get_partition_element_by_class(self, partition, class_to_find):
+        element = partition.getElementsByClass(class_to_find)
+        for element in element:
+            return element
+        return ''
 
     def choose_instrument_partition(self, midi_song):
         instrument_name = None
@@ -76,8 +102,9 @@ class DataHandler:
 
         for partition in partitions:
             if partition.id:
-                song_instruments.append(partition.id)
-                input_question += "\n\t" + partition.id
+                if len(partition.flat.notes) > 1:
+                    song_instruments.append(partition.id)
+                    input_question += "\n\t" + partition.id
 
         input_question += '\n:'
         while instrument_name not in song_instruments:
@@ -85,36 +112,39 @@ class DataHandler:
 
         return instrument_name, partitions.getElementById(instrument_name)
 
-    def save_instrument_and_notes(self, instrument_name, notes):
+    def save_partition_info_and_notes(self, partition_info, notes):
         with open(constant.NOTE_PATH, 'wb') as note_path:
             pickle.dump(notes, note_path)
 
-        with open(constant.INSTRUMENT_PATH, 'wb') as instrument_path:
-            pickle.dump(instrument_name, instrument_path)
+        with open(constant.PARTITION_INFO_PATH, 'wb') as partition_info_path:
+            pickle.dump(partition_info, partition_info_path)
 
-    def save_midi(self, args, prediction_output):
+    def save_midi(self, partition_info, prediction_output):
         offset = 0
 
-        with open(args["instrument"], 'rb') as instrument_path:
-            chosen_instrument = instrument.fromString(pickle.load(instrument_path))
-            partition = stream.Part()
-            partition.insert(chosen_instrument)
+        partition = stream.Part()
+        elements_to_insert = ['key', 'time_signature', 'metronome_mark']
+        for element in elements_to_insert:
+            if partition_info[element]:
+                partition.insert(partition_info[element])
 
-            for pattern in prediction_output:
-                if ('.' in pattern) or pattern.isdigit():
-                    notes_in_chord = pattern.split('.')
-                    notes = []
-                    for current_note in notes_in_chord:
-                        new_note = note.Note(int(current_note))
-                        notes.append(new_note)
-                    partition.insert(offset, chord.Chord(notes))
-                else:
-                    partition.insert(offset, note.Note(pattern))
+        partition.insert(instrument.fromString(partition_info['instrument_name']))
 
-                offset += 0.5
+        for pattern in prediction_output:
+            if ('.' in pattern) or pattern.isdigit():
+                notes_in_chord = pattern.split('.')
+                notes = []
+                for current_note in notes_in_chord:
+                    new_note = note.Note(int(current_note))
+                    notes.append(new_note)
+                partition.insert(offset, chord.Chord(notes))
+            else:
+                partition.insert(offset, note.Note(pattern))
 
-            midi_stream = stream.Stream()
-            midi_stream.insert(0, partition)
-            midi_stream.show("text")
+            offset += 0.5
 
-            midi_stream.write('midi', fp=constant.NEW_MUSIC)
+        midi_stream = stream.Stream()
+        midi_stream.insert(0, partition)
+        midi_stream.show("text")
+
+        midi_stream.write('midi', fp=constant.NEW_MUSIC)

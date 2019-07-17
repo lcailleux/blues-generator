@@ -53,9 +53,16 @@ class NeuralNetwork:
             pitches = sorted(set(item for item in notes))
             vocab_length = len(set(notes))
 
-            network_input, network_output = self.data_handler.prepare_sequences(notes, vocab_length)
-            prediction_output = self.network_model.generate_notes(model, network_input, pitches, vocab_length)
+            with open(args["partition_info"], 'rb') as partition_info_path:
+                partition_info = pickle.load(partition_info_path)
 
-            self.data_handler.save_midi(args, prediction_output)
+                network_input, network_output = self.data_handler.prepare_sequences(
+                    notes,
+                    partition_info['sequence_length'],
+                    vocab_length
+                )
+
+                prediction_output = self.network_model.generate_notes(model, network_input, pitches, vocab_length)
+                self.data_handler.save_midi(partition_info, prediction_output)
 
 
