@@ -1,6 +1,4 @@
 BATCH_SIZE = 64
-DATASET_PATH = "dataset"
-DATASET_FORMAT = "*.mid"
 EPOCHS = 200
 LEARNING_RATE = 1e-3
 MODEL_LOSS = "categorical_crossentropy"
