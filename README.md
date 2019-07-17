@@ -46,7 +46,7 @@ Please select one of the instrument for music generation:
 
 ### Model loss/accuracy
 
-* Accuracy and Loss example:
+* Loss and Accuracy example:
 
    ![Image](./output/plot.png) 
    
