@@ -98,13 +98,16 @@ class DataHandler:
         input_question = "Please select one of the instrument for music generation:"
 
         if not partitions:
-            raise ValueError('partitions not found.')
+            raise ValueError('Partitions not found.')
 
         for partition in partitions:
             if partition.id:
                 if len(partition.flat.notes) > args['sequence_length']:
                     song_instruments.append(partition.id)
                     input_question += "\n\t" + partition.id
+
+        if not song_instruments:
+            raise ValueError('Partitions not found.')
 
         input_question += '\n:'
         while instrument_name not in song_instruments:
