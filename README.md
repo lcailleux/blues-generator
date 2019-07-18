@@ -65,6 +65,8 @@ Usage: python src/blues_generator.py
 You can hear some examples there:
 
    * Blues Bass: https://soundcloud.com/louis-cailleux/generated-blues-bass/s-2X9Kr
+   * Blues Guitar: https://soundcloud.com/louis-cailleux/generated-blues-guitar/s-TRd89
+   * Blues Piano: https://soundcloud.com/louis-cailleux/generated-blues-piano/s-jjG0g
 
 ## Possible improvements
 
