@@ -17,7 +17,7 @@ class DataHandler:
         return network_input, network_output, vocab_length
 
     def prepare_sequences(self, notes, sequence_length, vocab_length):
-        if not sequence_length or sequence_length > constant.SEQUENCE_LENGTH:
+        if not sequence_length:
             sequence_length = constant.SEQUENCE_LENGTH
 
         print(sequence_length)
