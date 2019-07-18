@@ -48,7 +48,7 @@ class DataHandler:
         try:
             with open(args["file"], 'rb') as file:
                 midi_song = converter.parse(file.read())
-                instrument_name, partition = self.choose_instrument_partition(midi_song)
+                instrument_name, partition = self.choose_instrument_partition(args, midi_song)
 
                 try:
                     metronome_mark_boundaries = partition.metronomeMarkBoundaries()[0]
@@ -91,7 +91,7 @@ class DataHandler:
             return element
         return ''
 
-    def choose_instrument_partition(self, midi_song):
+    def choose_instrument_partition(self, args, midi_song):
         instrument_name = None
         song_instruments = []
         partitions = instrument.partitionByInstrument(midi_song)
@@ -102,7 +102,7 @@ class DataHandler:
 
         for partition in partitions:
             if partition.id:
-                if len(partition.flat.notes) > 1:
+                if len(partition.flat.notes) > args['sequence_length']:
                     song_instruments.append(partition.id)
                     input_question += "\n\t" + partition.id
 
